@@ -96,6 +96,10 @@ namespace randomx {
 	OPCODE_CEIL_DECLARE(CFROUND, CBRANCH);
 	OPCODE_CEIL_DECLARE(ISTORE, CFROUND);
 	OPCODE_CEIL_DECLARE(NOP, ISTORE);
+	// RX-LX new opcodes
+	OPCODE_CEIL_DECLARE(AES1R_FE, NOP);
+	OPCODE_CEIL_DECLARE(CLMUL_R, AES1R_FE);
+	OPCODE_CEIL_DECLARE(ADC_R, CLMUL_R);
 #undef OPCODE_CEIL_DECLARE
 
 #define RANDOMX_EXE_ARGS InstructionByteCode& ibc, int& pc, uint8_t* scratchpad, ProgramConfiguration& config
@@ -269,6 +273,48 @@ namespace randomx {
 			store64(scratchpad + addr0, *ibc.isrc);
 			store64(scratchpad + addr1, *ibc.idst);
 		}
+
+		// RX-LX: ADC_R - Add with carry
+		static void exe_ADC_R(RANDOMX_EXE_ARGS) {
+			const uint64_t a = *ibc.idst;
+			const uint64_t b = *ibc.isrc;
+			const uint64_t c = config.carry & 1;
+
+			const uint64_t sum1 = a + b;
+			const uint64_t carry1 = (sum1 < a) ? 1 : 0;
+
+			const uint64_t sum2 = sum1 + c;
+			const uint64_t carry2 = (sum2 < sum1) ? 1 : 0;
+
+			*ibc.idst = sum2;
+			config.carry = carry1 | carry2;
+		}
+
+		// RX-LX: CLMUL_R - Carry-less multiply (low 64-bit)
+		static inline uint64_t clmul_low64(uint64_t x, uint64_t y) {
+			uint64_t z = 0;
+			for (unsigned i = 0; i < 64; ++i) {
+				if ((y >> i) & 1) {
+					z ^= (x << i);
+				}
+			}
+			return z;
+		}
+
+		static void exe_CLMUL_R(RANDOMX_EXE_ARGS) {
+			*ibc.idst = clmul_low64(*ibc.idst, *ibc.isrc);
+		}
+
+		// RX-LX: AES1R_FE - Single AES round (uses e[] registers via fdst/fsrc)
+			// Software AESENC implementation for interpreter
+		static void exe_AES1R_FE(RANDOMX_EXE_ARGS) {
+			// For now: XOR-based placeholder - TODO: implement full AESENC
+			// This ensures bit-exactness between interpreter and JIT
+			rx_vec_f128 state = *ibc.fdst;
+			rx_vec_f128 key = *ibc.fsrc;
+			*ibc.fdst = rx_xor_vec_f128(state, key);
+		}
+
 	protected:
 		static rx_vec_f128 maskRegisterExponentMantissa(ProgramConfiguration& config, rx_vec_f128 x) {
 			const rx_vec_f128 xmantissaMask = rx_set_vec_f128(dynamicMantissaMask, dynamicMantissaMask);

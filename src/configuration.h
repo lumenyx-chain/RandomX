@@ -94,7 +94,7 @@ Total sum of frequencies must be 256
 #define RANDOMX_FREQ_ISMULH_M       1
 #define RANDOMX_FREQ_IMUL_RCP       8
 #define RANDOMX_FREQ_INEG_R         2
-#define RANDOMX_FREQ_IXOR_R        15
+#define RANDOMX_FREQ_IXOR_R        11
 #define RANDOMX_FREQ_IXOR_M         5
 #define RANDOMX_FREQ_IROR_R         8
 #define RANDOMX_FREQ_IROL_R         2
@@ -107,12 +107,12 @@ Total sum of frequencies must be 256
 #define RANDOMX_FREQ_FSUB_R        16
 #define RANDOMX_FREQ_FSUB_M         5
 #define RANDOMX_FREQ_FSCAL_R        6
-#define RANDOMX_FREQ_FMUL_R        32
+#define RANDOMX_FREQ_FMUL_R        28
 #define RANDOMX_FREQ_FDIV_M         4
 #define RANDOMX_FREQ_FSQRT_R        6
 
 //Control instructions
-#define RANDOMX_FREQ_CBRANCH       25
+#define RANDOMX_FREQ_CBRANCH       21
 #define RANDOMX_FREQ_CFROUND        1
 
 //Store instruction
@@ -120,6 +120,11 @@ Total sum of frequencies must be 256
 
 //No-op instruction
 #define RANDOMX_FREQ_NOP            0
+
+//RX-LX new opcodes
+#define RANDOMX_FREQ_AES1R_FE       4
+#define RANDOMX_FREQ_CLMUL_R        4
+#define RANDOMX_FREQ_ADC_R          4
 /*                               ------
                                   256
 */

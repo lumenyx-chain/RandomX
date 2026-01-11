@@ -39,6 +39,8 @@ namespace randomx {
 	struct ProgramConfiguration {
 		uint64_t eMask[2];
 		uint32_t readReg0, readReg1, readReg2, readReg3;
+		// RX-LX: carry flag for ADC_R (0 or 1)
+		uint64_t carry = 0;
 	};
 
 	class Program {

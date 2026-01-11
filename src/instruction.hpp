@@ -70,6 +70,11 @@ namespace randomx {
 		CFROUND = 27,
 		ISTORE = 28,
 		NOP = 29,
+
+		// RX-LX (LUMENYX extensions)
+		AES1R_FE = 30,
+		CLMUL_R = 31,
+		ADC_R = 32,
 	};
 
 	class Instruction {

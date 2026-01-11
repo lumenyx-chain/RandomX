@@ -68,6 +68,10 @@ namespace randomx {
 			INSTR_CASE(CBRANCH)
 			INSTR_CASE(CFROUND)
 			INSTR_CASE(ISTORE)
+		// RX-LX new opcodes
+		INSTR_CASE(AES1R_FE)
+		INSTR_CASE(CLMUL_R)
+		INSTR_CASE(ADC_R)
 
 		case InstructionType::NOP:
 			break;
@@ -474,6 +478,36 @@ namespace randomx {
 
 		if (opcode < ceil_NOP) {
 			ibc.type = InstructionType::NOP;
+			return;
+		}
+
+		// RX-LX: AES1R_FE decoder (operates on e[] registers)
+		if (opcode < ceil_AES1R_FE) {
+			auto dst = instr.dst % RegisterCountFlt;
+			auto src = instr.src % RegisterCountFlt;
+			ibc.type = InstructionType::AES1R_FE;
+			ibc.fdst = &nreg->e[dst];
+			ibc.fsrc = &nreg->e[src];
+			return;
+		}
+
+		// RX-LX: CLMUL_R decoder (operates on r[] registers)
+		if (opcode < ceil_CLMUL_R) {
+			auto dst = instr.dst % RegistersCount;
+			auto src = instr.src % RegistersCount;
+			ibc.type = InstructionType::CLMUL_R;
+			ibc.idst = &nreg->r[dst];
+			ibc.isrc = &nreg->r[src];
+			return;
+		}
+
+		// RX-LX: ADC_R decoder (operates on r[] registers)
+		if (opcode < ceil_ADC_R) {
+			auto dst = instr.dst % RegistersCount;
+			auto src = instr.src % RegistersCount;
+			ibc.type = InstructionType::ADC_R;
+			ibc.idst = &nreg->r[dst];
+			ibc.isrc = &nreg->r[src];
 			return;
 		}
 
