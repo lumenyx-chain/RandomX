@@ -199,10 +199,6 @@ namespace randomx {
 	static const uint8_t REX_ANDPS_XMM12[] = { 0x45, 0x0F, 0x54, 0xE5, 0x45, 0x0F, 0x56, 0xE6 };
 	static const uint8_t REX_PADD[] = { 0x66, 0x44, 0x0f };
 	static const uint8_t PADD_OPCODES[] = { 0xfc, 0xfd, 0xfe, 0xd4 };
-	// RX-LX new opcodes
-	static const uint8_t REX_AESENC[] = { 0x66, 0x45, 0x0f, 0x38, 0xdc };  // AESENC xmm_r8+, xmm_r8+
-	static const uint8_t REX_PCLMULQDQ[] = { 0x66, 0x45, 0x0f, 0x3a, 0x44 };  // PCLMULQDQ
-	static const uint8_t REX_ADC_RR[] = { 0x4d, 0x11 };  // ADC r64, r64 (r8-r15)
 	static const uint8_t CALL = 0xe8;
 	static const uint8_t REX_ADD_I[] = { 0x49, 0x81 };
 	static const uint8_t REX_TEST[] = { 0x49, 0xF7 };
@@ -833,51 +829,6 @@ namespace randomx {
 		emit(NOP1);
 	}
 
-// RX-LX: AES single round on e[] registers (xmm4-7)
-void JitCompilerX86::h_AES1R_FE(Instruction& instr, int i) {
-instr.dst %= RegisterCountFlt;  // 0-3 -> e[0-3] = xmm4-7
-instr.src %= RegisterCountFlt;
-// AESENC xmm(dst+4), xmm(src+4)
-emit(REX_AESENC);
-emitByte(0xc0 + (instr.src + 4) + 8 * (instr.dst + 4));
-}
-
-// RX-LX: Carry-less multiply (PCLMULQDQ) - low 64 bits
-void JitCompilerX86::h_CLMUL_R(Instruction& instr, int i) {
-registerUsage[instr.dst] = i;
-// Move r[dst] to xmm12, r[src] to xmm13
-// MOVQ xmm12, r[dst]
-emit32(0x6e0f4966);  // 66 49 0F 6E
-emitByte(0xe0 + instr.dst);  // xmm12, r[dst]
-// MOVQ xmm13, r[src]  
-emit32(0x6e0f4d66);  // 66 4D 0F 6E
-emitByte(0xe8 + instr.src);  // xmm13, r[src]
-// PCLMULQDQ xmm12, xmm13, 0x00 (low64 * low64)
-emit(REX_PCLMULQDQ);
-emitByte(0xe5);  // xmm12, xmm13
-emitByte(0x00);  // imm8 = 0 (low * low)
-// MOVQ r[dst], xmm12
-emit32(0x7e0f4966);  // 66 49 0F 7E
-emitByte(0xe0 + instr.dst);
-}
-
-// RX-LX: Add with carry
-void JitCompilerX86::h_ADC_R(Instruction& instr, int i) {
-registerUsage[instr.dst] = i;
-if (instr.src != instr.dst) {
-// ADC r[dst], r[src]
-emit(REX_ADC_RR);
-emitByte(0xc0 + 8 * instr.src + instr.dst);
-}
-else {
-// ADC r[dst], imm32 - use 0x81 /2
-emitByte(0x49);
-emitByte(0x81);
-emitByte(0xd0 + instr.dst);  // /2 = ADC
-emit32(instr.getImm32());
-}
-}
-
 #include "instruction_weights.hpp"
 #define INST_HANDLE(x) REPN(&JitCompilerX86::h_##x, WT(x))
 
@@ -912,9 +863,6 @@ emit32(instr.getImm32());
 		INST_HANDLE(CFROUND)
 		INST_HANDLE(ISTORE)
 		INST_HANDLE(NOP)
-		INST_HANDLE(AES1R_FE)
-		INST_HANDLE(CLMUL_R)
-		INST_HANDLE(ADC_R)
 	};
 
 }
