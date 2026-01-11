@@ -263,7 +263,11 @@ namespace randomx {
 		}
 
 		static void exe_ISTORE(RANDOMX_EXE_ARGS) {
-			store64(scratchpad + ((*ibc.idst + ibc.imm) & ibc.memMask), *ibc.isrc);
+			// RX-LX: ISTORE_XL - 16 byte store instead of 8
+			const uint32_t addr0 = static_cast<uint32_t>((*ibc.idst + ibc.imm) & ibc.memMask);
+			const uint32_t addr1 = static_cast<uint32_t>((addr0 + 8) & ibc.memMask);
+			store64(scratchpad + addr0, *ibc.isrc);
+			store64(scratchpad + addr1, *ibc.idst);
 		}
 	protected:
 		static rx_vec_f128 maskRegisterExponentMantissa(ProgramConfiguration& config, rx_vec_f128 x) {

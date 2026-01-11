@@ -798,11 +798,32 @@ namespace randomx {
 	}
 
 	void JitCompilerX86::h_ISTORE(Instruction& instr, int i) {
-		genAddressRegDst(instr);
+		genAddressRegDst(instr);  // EAX = addr0 (masked)
+
+		// RX-LX: ISTORE_XL - Store 16 bytes instead of 8
+		// Store #1: [rsi + rax] = R[src]
 		emit(REX_MOV_MR);
 		emitByte(0x04 + 8 * instr.src);
-		emitByte(0x06);
-	}
+		emitByte(0x06);  // SIB: [rsi + rax]
+
+		// ECX = EAX + 8  (lea ecx, [eax+8])
+		emitByte(0x8D);
+		emitByte(0x48);
+		emitByte(0x08);
+
+		// ECX &= memMask (same mask logic as genAddressRegDst)
+		emit(AND_ECX_I);
+		if (instr.getModCond() < StoreL3Condition) {
+		emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
+		} else {
+		emit32(ScratchpadL3Mask);
+		}
+
+		// Store #2: [rsi + rcx] = R[dst]
+		emit(REX_MOV_MR);
+		emitByte(0x04 + 8 * instr.dst);
+		emitByte(0x0E);  // SIB: [rsi + rcx]
+		}
 
 	void JitCompilerX86::h_NOP(Instruction& instr, int i) {
 		emit(NOP1);
