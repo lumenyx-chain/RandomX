@@ -442,82 +442,27 @@ namespace randomx {
 		}
 	}
 
-	// RX-LX: Pointer chasing - 2 loads per memory access (anti-prefetch)
-	// Output: rax==true -> EAX = addr2 masked; rax==false -> ECX = addr2 masked
-	// Clobbers: RDX + (the other 32-bit reg used as temp)
 	void JitCompilerX86::genAddressReg(Instruction& instr, bool rax = true) {
-		if (rax) {
-			// ---- produce addr in EAX ----
-			emit(LEA_32);
-			emitByte(0x80 + instr.src);
-			if (instr.src == RegisterNeedsSib) emitByte(0x24);
-			emit32(instr.getImm32());
-			emitByte(AND_EAX_I);
-			emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
-			// mov rdx, [rsi + rax]
-			emitByte(0x48); emitByte(0x8B); emitByte(0x14); emitByte(0x06);
-			// temp in ECX
-			emitByte(0x89); emitByte(0xD1);  // mov ecx, edx
-			emitByte(0x48); emitByte(0xC1); emitByte(0xEA); emitByte(0x20);  // shr rdx, 32
-			emitByte(0xC1); emitByte(0xC1); emitByte(0x11);  // rol ecx, 17
-			emitByte(0x31); emitByte(0xD1);  // xor ecx, edx
-			emitByte(0x31); emitByte(0xC8);  // xor eax, ecx
-			emitByte(AND_EAX_I);
-			emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
-		} else {
-			// ---- produce addr in ECX ----
-			// Step 1: addr1 in EAX first
-			emit(LEA_32);
-			emitByte(0x80 + instr.src);
-			if (instr.src == RegisterNeedsSib) emitByte(0x24);
-			emit32(instr.getImm32());
-			emitByte(AND_EAX_I);
-			emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
-			// mov ecx, eax
-			emitByte(0x89); emitByte(0xC1);
-			// mov rdx, [rsi + rcx] (SIB=0x0E for rcx index)
-			emitByte(0x48); emitByte(0x8B); emitByte(0x14); emitByte(0x0E);
-			// temp in EAX (ECX is address reg!)
-			emitByte(0x89); emitByte(0xD0);  // mov eax, edx
-			emitByte(0x48); emitByte(0xC1); emitByte(0xEA); emitByte(0x20);  // shr rdx, 32
-			emitByte(0xC1); emitByte(0xC0); emitByte(0x11);  // rol eax, 17
-			emitByte(0x31); emitByte(0xD0);  // xor eax, edx
-			emitByte(0x31); emitByte(0xC1);  // xor ecx, eax
-			emit(AND_ECX_I);
-			emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
+		emit(LEA_32);
+		emitByte(0x80 + instr.src + (rax ? 0 : 8));
+		if (instr.src == RegisterNeedsSib) {
+			emitByte(0x24);
 		}
+		emit32(instr.getImm32());
+		if (rax)
+			emitByte(AND_EAX_I);
+		else
+			emit(AND_ECX_I);
+		emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
 	}
 
-	// RX-LX: Pointer chasing for store operations
 	void JitCompilerX86::genAddressRegDst(Instruction& instr) {
-		// Step 1: LEA eax, [r_dst + imm32] -> addr1
 		emit(LEA_32);
 		emitByte(0x80 + instr.dst);
 		if (instr.dst == RegisterNeedsSib) {
 			emitByte(0x24);
 		}
 		emit32(instr.getImm32());
-		// Step 2: AND eax, mask -> addr1 masked
-		emitByte(AND_EAX_I);
-		if (instr.getModCond() < StoreL3Condition) {
-			emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);
-		}
-		else {
-			emit32(ScratchpadL3Mask);
-		}
-		// Step 3: Load indirect value: mov rdx, [rsi + rax]
-		emitByte(0x48); emitByte(0x8b); emitByte(0x14); emitByte(0x06);
-		// Step 4: Mix - mov ecx, edx
-		emitByte(0x89); emitByte(0xd1);
-		// shr rdx, 32
-		emitByte(0x48); emitByte(0xc1); emitByte(0xea); emitByte(0x20);
-		// rol ecx, 17
-		emitByte(0xc1); emitByte(0xc1); emitByte(0x11);
-		// xor ecx, edx
-		emitByte(0x31); emitByte(0xd1);
-		// Step 5: xor eax, ecx -> addr2
-		emitByte(0x31); emitByte(0xc8);
-		// Step 6: AND eax, mask -> addr2 masked
 		emitByte(AND_EAX_I);
 		if (instr.getModCond() < StoreL3Condition) {
 			emit32(instr.getModMem() ? ScratchpadL1Mask : ScratchpadL2Mask);

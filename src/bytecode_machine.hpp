@@ -329,9 +329,25 @@ namespace randomx {
 		int registerUsage[RegistersCount];
 		NativeRegisterFile* nreg;
 
+		// RX-LX: Helper for pointer chasing mixing
+		static inline uint32_t rotl32(uint32_t x, unsigned r) {
+			return (x << r) | (x >> (32 - r));
+		}
+
+		// RX-LX: Pointer chasing - 2 loads per memory access (anti-prefetch)
 		static void* getScratchpadAddress(InstructionByteCode& ibc, uint8_t* scratchpad) {
-			uint32_t addr = (*ibc.isrc + ibc.imm) & ibc.memMask;
-			return scratchpad + addr;
+			// addr1: 8-byte aligned (memMask has ~7)
+			const uint32_t addr1 = static_cast<uint32_t>((*ibc.isrc + ibc.imm) & ibc.memMask);
+			// First load: read 64 bits from scratchpad
+			const uint64_t indirect = load64(scratchpad + addr1);
+			// Split into low and high 32-bit parts
+			const uint32_t lo = static_cast<uint32_t>(indirect);
+			const uint32_t hi = static_cast<uint32_t>(indirect >> 32);
+			// Mix to avoid pattern collapse; fully deterministic
+			const uint32_t mix = rotl32(lo, 17) ^ hi;
+			// addr2: final address with mixing applied
+			const uint32_t addr2 = (addr1 ^ mix) & ibc.memMask;
+			return scratchpad + addr2;
 		}
 
 #ifdef RANDOMX_GEN_TABLE
