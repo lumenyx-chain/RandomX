@@ -69,7 +69,7 @@ namespace randomx {
 			INSTR_CASE(CFROUND)
 			INSTR_CASE(ISTORE)
 		// RX-LX new opcodes
-		INSTR_CASE(AES1R_FE)
+		// INSTR_CASE(AES1R_FE) - RX-LX: Removed (freq=0)
 		INSTR_CASE(CLMUL_R)
 		INSTR_CASE(ADC_R)
 
@@ -481,15 +481,7 @@ namespace randomx {
 			return;
 		}
 
-		// RX-LX: AES1R_FE decoder (operates on e[] registers)
-		if (opcode < ceil_AES1R_FE) {
-			auto dst = instr.dst % RegisterCountFlt;
-			auto src = instr.src % RegisterCountFlt;
-			ibc.type = InstructionType::AES1R_FE;
-			ibc.fdst = &nreg->e[dst];
-			ibc.fsrc = &nreg->e[src];
-			return;
-		}
+		// RX-LX: AES1R_FE removed (freq=0) - was using hardware SBOX
 
 		// RX-LX: CLMUL_R decoder (operates on r[] registers)
 		if (opcode < ceil_CLMUL_R) {

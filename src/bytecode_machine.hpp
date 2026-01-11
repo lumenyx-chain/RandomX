@@ -305,15 +305,8 @@ namespace randomx {
 			*ibc.idst = clmul_low64(*ibc.idst, *ibc.isrc);
 		}
 
-		// RX-LX: AES1R_FE - Single AES round (uses e[] registers via fdst/fsrc)
-			// Software AESENC implementation for interpreter
-		static void exe_AES1R_FE(RANDOMX_EXE_ARGS) {
-			// For now: XOR-based placeholder - TODO: implement full AESENC
-			// This ensures bit-exactness between interpreter and JIT
-			rx_vec_f128 state = *ibc.fdst;
-			rx_vec_f128 key = *ibc.fsrc;
-			*ibc.fdst = rx_xor_vec_f128(state, key);
-		}
+		// RX-LX: AES1R_FE removed - was using hardware SBOX incompatible with custom SBOX
+		// Frequency redistributed to CLMUL_R and ADC_R
 
 	protected:
 		static rx_vec_f128 maskRegisterExponentMantissa(ProgramConfiguration& config, rx_vec_f128 x) {

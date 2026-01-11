@@ -200,7 +200,7 @@ namespace randomx {
 	static const uint8_t REX_PADD[] = { 0x66, 0x44, 0x0f };
 	static const uint8_t PADD_OPCODES[] = { 0xfc, 0xfd, 0xfe, 0xd4 };
 	// RX-LX new opcodes
-	static const uint8_t REX_AESENC[] = { 0x66, 0x45, 0x0f, 0x38, 0xdc };  // AESENC xmm_r8+, xmm_r8+
+	// REX_AESENC removed - RX-LX: AES1R_FE no longer used
 	static const uint8_t REX_PCLMULQDQ[] = { 0x66, 0x45, 0x0f, 0x3a, 0x44 };  // PCLMULQDQ
 	static const uint8_t REX_ADC_RR[] = { 0x4d, 0x11 };  // ADC r64, r64 (r8-r15)
 	static const uint8_t CALL = 0xe8;
@@ -889,13 +889,8 @@ namespace randomx {
 	}
 
 // RX-LX: AES single round on e[] registers (xmm4-7)
-void JitCompilerX86::h_AES1R_FE(Instruction& instr, int i) {
-instr.dst %= RegisterCountFlt;  // 0-3 -> e[0-3] = xmm4-7
-instr.src %= RegisterCountFlt;
-// AESENC xmm(dst+4), xmm(src+4)
-emit(REX_AESENC);
-emitByte(0xc0 + (instr.src + 4) + 8 * (instr.dst + 4));
-}
+// RX-LX: h_AES1R_FE removed - was using hardware SBOX incompatible with custom SBOX
+// Frequency redistributed to CLMUL_R and ADC_R
 
 // RX-LX: Carry-less multiply (PCLMULQDQ) - low 64 bits
 void JitCompilerX86::h_CLMUL_R(Instruction& instr, int i) {
@@ -967,7 +962,7 @@ emit32(instr.getImm32());
 		INST_HANDLE(CFROUND)
 		INST_HANDLE(ISTORE)
 		INST_HANDLE(NOP)
-		INST_HANDLE(AES1R_FE)
+		// INST_HANDLE(AES1R_FE) - RX-LX: Removed (freq=0)
 		INST_HANDLE(CLMUL_R)
 		INST_HANDLE(ADC_R)
 	};

@@ -137,7 +137,7 @@ namespace randomx {
 		void h_CFROUND(Instruction&, int);
 		void h_ISTORE(Instruction&, int);
 		void h_NOP(Instruction&, int);
-		void h_AES1R_FE(Instruction&, int);
+		// void h_AES1R_FE - RX-LX: Removed (freq=0)
 		void h_CLMUL_R(Instruction&, int);
 		void h_ADC_R(Instruction&, int);
 	};

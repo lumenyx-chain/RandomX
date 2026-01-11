@@ -122,9 +122,9 @@ Total sum of frequencies must be 256
 #define RANDOMX_FREQ_NOP            0
 
 //RX-LX new opcodes
-#define RANDOMX_FREQ_AES1R_FE       4
-#define RANDOMX_FREQ_CLMUL_R        4
-#define RANDOMX_FREQ_ADC_R          4
+#define RANDOMX_FREQ_AES1R_FE       0  // RX-LX: Removed - was using hardware SBOX
+#define RANDOMX_FREQ_CLMUL_R        6  // RX-LX: +2 from AES1R_FE
+#define RANDOMX_FREQ_ADC_R          6  // RX-LX: +2 from AES1R_FE
 /*                               ------
                                   256
 */
